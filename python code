@@ -1,0 +1,112 @@
+Created on Tue Jun 25 13:34:49 2019
+
+@author: Brian Huck
+Goal: Solve a more abstract but, still practical, problem
+"""
+
+'''
+Ops Research: Applications and Algorithms 3rd ed, Wayne L. Winston, page 74
+
+Problem: A maintenance shop requires different number of maintainers on different
+days.  The number required is:
+    
+    Mon  17
+    Tue  13
+    Wed  15
+    Thu  19
+    Fri  14
+    Sat  16
+    Sun  11
+
+Policy states that each airman must work five consecutive days then get two
+days off.  Minimize the total number of airmen per shop.
+
+
+
+When modeling this problem, a common error is to set Xi = the number of airmen
+working on day i.  The issue is that each airman is counted five times but also
+there are relationships between x variables.  For example, x1 and x2 both contain
+some of the same airmen.  In other words, the variables are not independent.  
+
+The correct way to think about modeling this problem is to determine which person
+starts on which day. Let Xi = the number of airmen that begin work on day i.
+
+The objective function is now min z = x1 + x2 + ... + x7
+
+The monday constraint is the number of airmen that began work on thur, fri,... mon.
+In other words, those whose weekend is on tue and wed do not work monday.  Therefore,
+x1 + x4 + x5 + x6 + x7 >= 17 is our monday constraint.  Do this for all days
+'''
+import pandas as pd
+import numpy as np
+from ortools.linear_solver import pywraplp
+
+
+
+solver = pywraplp.Solver('LinearExample', pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+
+
+# define variables
+x1 = solver.IntVar(0, solver.infinity(), 'x1')
+x2 = solver.IntVar(0, solver.infinity(), 'x2')   
+x3 = solver.IntVar(0, solver.infinity(), 'x3')
+x4 = solver.IntVar(0, solver.infinity(), 'x4')
+x5 = solver.IntVar(0, solver.infinity(), 'x5')
+x6 = solver.IntVar(0, solver.infinity(), 'x6')
+x7 = solver.IntVar(0, solver.infinity(), 'x7') 
+
+###############################
+# define constraints
+###############################
+
+# Monday Constraint
+solver.Add(x1 + x4 + x5 + x6 + x7 >= 17)
+
+# Tuesday Constraint
+solver.Add(x2 + x5 + x6 + x7 +x1 >= 13)
+
+# Wednsday Constraint
+solver.Add(x3 + x6 + x7 +x1 +x2 >= 15)
+
+# Thursday Constraint
+solver.Add(x4 + x7 +x1 + x2 + x3 >= 19)
+
+# Friday Constraint
+solver.Add(x5 +x1 + x2 + x3 +x4 >= 14)
+
+# Saturday Constraint
+solver.Add(x6 + x2 + x3 +x4 +x5 >= 16)
+
+# Sunday Constraint
+solver.Add(x7 + x3 +x4 +x5 + x6 >= 11)
+
+###############################
+# define the objective function
+###############################
+
+# min z = x1 + x2 + x3 +x4 +x5 + x6 +x7
+solver.Minimize(x1 + x2 + x3 +x4 +x5 + x6 +x7)
+
+###############################
+# solve the problem
+###############################
+
+solver.Solve()
+opt_solution = x1.solution_value() + x2.solution_value() + x3.solution_value() + x4.solution_value() + x5.solution_value() + x6.solution_value() + x7.solution_value()
+
+
+print('Number of variables = ', solver.NumVariables())
+print('Number of constraints = ', solver.NumConstraints())
+
+# the value of each variable 
+print('Solution: ')
+print('x1 = ', x1.solution_value())
+print('x2 = ', x2.solution_value())
+print('x3 = ', x3.solution_value())
+print('x4 = ', x4.solution_value())
+print('x5 = ', x5.solution_value())
+print('x6 = ', x6.solution_value())
+print('x7 = ', x7.solution_value())
+
+# the value of the objective function
+print('Optimal objective value = ', opt_solution)
